@@ -43,7 +43,7 @@ app.get("/login", async (req,res) => {
 })
 
 // CREATE NEW USER
-app.post("/newuser", async (req,res) => {
+app.post("/signup", async (req,res) => {
 
     const pass = req.body.password
     const email = req.body.email
@@ -69,13 +69,28 @@ app.post("/newuser", async (req,res) => {
         q.Login(
             q.Match(q.Index("users_by_email"), email), { password: pass }
         )
-    )
+    ).catch (err => res.json(err))
     res.json( {"token": login.secret, "user-ref": login.instance.id} )
 })
 
 // SIGNED IN USER SECTION
-// after this, every route needs the following line:
-/*
-    const client = new faunadb.Client({ secret: req.token })
-*/
+// after this, every route needs to call the following function:
+    const userClient = (authToken) => {
+        return new faunadb.Client({ 
+            secret: authToken,
+            domain: 'db.us.fauna.com',
+            scheme: 'https' 
+        })
+    }
 // likewise, frontend must send the token with every request
+
+app.get("/home", async (req,res) => {
+
+    const data = await userClient(req.body.token).query(
+        q.Map(
+            q.Paginate(q.Match(q.Index('users_by_email'))),
+            q.Lambda(x => q.Get(x))
+        )
+    ).catch(err => res.json(err))
+    res.json({ data, 'result':'Test Successful'})
+})
