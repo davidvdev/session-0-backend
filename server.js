@@ -30,7 +30,7 @@ app.get("/", async (req,res) => {
 })
 
 // LOGIN ROUTE
-app.get("/login", async (req,res) => {
+app.post("/login", async (req,res) => {
     const pass = req.body.password
     const email = req.body.email
 
@@ -39,7 +39,7 @@ app.get("/login", async (req,res) => {
             q.Match(q.Index("users_by_email"), email), { password: pass }
         )
     ).catch(err => res.json(err))
-    res.json( {"token": data.secret, "user-ref": data.instance.id} )
+    res.json( {"token": data.secret, "userRef": data.instance.id} )
 })
 
 // CREATE NEW USER
@@ -55,7 +55,7 @@ app.post("/signup", async (req,res) => {
         },
         data: {
             email: email,
-            name: "",
+            name: req.body.name,
             groups: {},
             profile_gm: {},
             profile_pc: {}
@@ -70,7 +70,7 @@ app.post("/signup", async (req,res) => {
             q.Match(q.Index("users_by_email"), email), { password: pass }
         )
     ).catch (err => res.json(err))
-    res.json( {"token": login.secret, "user-ref": login.instance.id} )
+    res.json( {"token": login.secret, "userRef": login.instance.id} )
 })
 
 // SIGNED IN USER SECTION
@@ -84,6 +84,7 @@ app.post("/signup", async (req,res) => {
     }
 // likewise, frontend must send the token with every request
 
+// USER CLIENT TEST ROUTE
 app.get("/home", async (req,res) => {
 
     const data = await userClient(req.body.token).query(
@@ -93,4 +94,16 @@ app.get("/home", async (req,res) => {
         )
     ).catch(err => res.json(err))
     res.json({ data, 'result':'Test Successful'})
+})
+
+// UPDATE USER PROFILE
+app.put("/user", async (req,res) => {
+
+    const response = await userClient(req.body.userAuth.token).query(
+        q.Update(
+            q.Ref(q.Collection('Users'), req.body.userAuth.userRef),
+            { data: req.body.data }
+        )
+    ).catch(err => res.json(err))
+    res.json(response)
 })
