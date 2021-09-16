@@ -56,9 +56,11 @@ app.post("/signup", async (req,res) => {
         data: {
             email: email,
             name: req.body.name,
+            img_profile: "https://i.imgur.com/JYTRwWf.png",
+            img_banner: "https://images.unsplash.com/photo-1578377375762-cbcc98d68af0?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80",
             groups: {},
-            profile_gm: {},
-            profile_pc: {}
+            profile_gm: [],
+            profile_pc: []
         }
     })
     ).catch (err => res.json(err))
@@ -94,6 +96,17 @@ app.get("/home", async (req,res) => {
         )
     ).catch(err => res.json(err))
     res.json({ data, 'result':'Test Successful'})
+})
+// GET USER PROFILE
+app.post("/user/:id", async (req,res) => {
+    console.log('INCOMING: ', req.body)
+    console.log('INCOMING: ', req.params)
+    const response = await userClient(req.body.token).query(
+        q.Get(
+            q.Ref(q.Collection('Users'), req.params.id)
+        )
+    ).catch(err => res.json(err))
+    res.json( response.data )
 })
 
 // UPDATE USER PROFILE
