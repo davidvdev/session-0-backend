@@ -141,3 +141,27 @@ app.post("/group", async (req,res) => {
     ).catch(err => res.json(err))
     res.json(response.data)
 })
+
+// GET A GROUP
+app.post("/group/:id", async (req,res) => {
+    console.log('INCOMING: ', req.body)
+    console.log('INCOMING: ', req.params)
+    const response = await userClient(req.body.token).query(
+        q.Get(
+            q.Ref(q.Collection('Groups'), req.params.id)
+        )
+    ).catch(err => res.json(err))
+    res.json( response.data )
+})
+
+// GET ALL GROUPS FOR SEARCH
+app.post("/allgroups", async (req,res) => {
+
+    const response = await userClient(req.body.token).query(
+        q.Map(
+            q.Paginate(q.Match(q.Index('all_groups_paginate'))),
+            q.Lambda("group", q.Get(q.Var("group")))
+        )
+    ).catch(err => res.json(err))
+    res.json( response.data )
+})
