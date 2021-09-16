@@ -120,3 +120,24 @@ app.put("/user", async (req,res) => {
     ).catch(err => res.json(err))
     res.json(response)
 })
+
+// CREATE A GROUP
+app.post("/group", async (req,res) => {
+
+    const group = req.body.data
+
+    const response = await userClient(req.body.userAuth.token).query(
+        q.Create(q.Collection('Groups'), 
+            { data: {
+                groupName: group.groupName,
+                gameInfo: group.gameInfo,
+                groupInfo: group.groupInfo,
+                players: group.players,
+                gm: group.gm,
+                bannerImg: group.bannerImg || "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2734&q=80"
+                }
+            }
+        )
+    ).catch(err => res.json(err))
+    res.json(response.data)
+})
