@@ -99,8 +99,6 @@ app.get("/home", async (req,res) => {
 })
 // GET USER PROFILE
 app.post("/user/:id", async (req,res) => {
-    console.log('INCOMING: ', req.body)
-    console.log('INCOMING: ', req.params)
     const response = await userClient(req.body.token).query(
         q.Get(
             q.Ref(q.Collection('Users'), req.params.id)
@@ -144,8 +142,6 @@ app.post("/group", async (req,res) => {
 
 // GET A GROUP
 app.post("/group/:id", async (req,res) => {
-    console.log('INCOMING: ', req.body)
-    console.log('INCOMING: ', req.params)
     const response = await userClient(req.body.token).query(
         q.Get(
             q.Ref(q.Collection('Groups'), req.params.id)
