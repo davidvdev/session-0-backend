@@ -137,17 +137,31 @@ app.post("/group", async (req,res) => {
             }
         )
     ).catch(err => res.json(err))
-    res.json(response.data)
+    res.json( response )
 })
 
 // GET A GROUP
 app.post("/group/:id", async (req,res) => {
-    const response = await userClient(req.body.token).query(
+    const group = await userClient(req.body.token).query(
         q.Get(
             q.Ref(q.Collection('Groups'), req.params.id)
         )
     ).catch(err => res.json(err))
-    res.json( response.data )
+
+    const members = await userClient(req.body.token).query(
+        q.Map(
+            q.Paginate(
+                q.Match(
+                    q.Index("member_by_group"),
+                    q.Ref(q.Collection("Groups"), req.params.id )
+                    )),
+                    q.Lambda("member",
+                        q.Select(["data"], q.Get(q.Var("member")))
+                    )
+                )
+        
+    ).catch(err => res.json(err))
+    res.json( {group: group, members: members} )
 })
 
 // GET ALL GROUPS FOR SEARCH
@@ -160,4 +174,31 @@ app.post("/allgroups", async (req,res) => {
         )
     ).catch(err => res.json(err))
     res.json( response.data )
+})
+
+// UPDATE A GROUP PROFILE
+app.put("/group/:id", async (req,res) => {
+
+    const response = await userClient(req.body.userAuth.token).query(
+        q.Update(
+            q.Ref(q.Collection('Groups'), req.body.id),
+            { data: req.body.data }
+        )
+    ).catch(err => res.json(err))
+    res.json(response.data)
+})
+
+// JOIN A GROUP AS A PLAYER
+app.post("/joingroup", async (req,res) => {
+    const response = await userClient(req.body.userAuth.token).query(
+        q.Create(
+            q.Collection("Relationships"), {
+                data: {
+                    member: q.Ref(q.Collection("Users"), req.body.userAuth.userRef),
+                    group: q.Ref(q.Collection("Groups"), req.body.id)
+                }
+            }
+        )
+    ).catch(err => res.json(err))
+    res.json(response.data)
 })
