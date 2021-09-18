@@ -86,17 +86,18 @@ app.post("/signup", async (req,res) => {
     }
 // likewise, frontend must send the token with every request
 
-// USER CLIENT TEST ROUTE
-app.get("/home", async (req,res) => {
+// // USER CLIENT TEST ROUTE
+// app.get("/home", async (req,res) => {
 
-    const data = await userClient(req.body.token).query(
-        q.Map(
-            q.Paginate(q.Match(q.Index('users_by_email'))),
-            q.Lambda(x => q.Get(x))
-        )
-    ).catch(err => res.json(err))
-    res.json({ data, 'result':'Test Successful'})
-})
+//     const data = await userClient(req.body.token).query(
+//         q.Map(
+//             q.Paginate(q.Match(q.Index('users_by_email'))),
+//             q.Lambda(x => q.Get(x))
+//         )
+//     ).catch(err => res.json(err))
+//     res.json({ data, 'result':'Test Successful'})
+// })
+
 // GET USER PROFILE
 app.post("/user/:id", async (req,res) => {
     const response = await userClient(req.body.token).query(
@@ -156,7 +157,7 @@ app.post("/group/:id", async (req,res) => {
                     q.Ref(q.Collection("Groups"), req.params.id )
                     )),
                     q.Lambda("member",
-                        q.Select(["data"], q.Get(q.Var("member")))
+                        q.Get(q.Var("member"))
                     )
                 )
         
@@ -201,4 +202,22 @@ app.post("/joingroup", async (req,res) => {
         )
     ).catch(err => res.json(err))
     res.json(response.data)
+})
+
+// GET A LOGGED IN USERS GROUPS
+app.post("/home", async (req,res) => {
+    const groups = await userClient(req.body.token).query(
+        q.Map(
+            q.Paginate(
+                q.Match(
+                    q.Index("group_by_member"),
+                    q.Ref(q.Collection("Users"), req.body.userRef )
+                    )),
+                    q.Lambda("group",
+                        q.Get(q.Var("group"))
+                    )
+                )
+        
+    ).catch(err => res.json(err))
+    res.json( groups.data )
 })
