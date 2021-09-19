@@ -42,6 +42,7 @@ app.post("/login", async (req,res) => {
     res.json( {"token": data.secret, "userRef": data.instance.id} )
 })
 
+
 // CREATE NEW USER
 app.post("/signup", async (req,res) => {
 
@@ -97,6 +98,14 @@ app.post("/signup", async (req,res) => {
 //     ).catch(err => res.json(err))
 //     res.json({ data, 'result':'Test Successful'})
 // })
+
+// LOGOUT ROUTE
+app.post("/logout", async (req,res) => {
+    const data = await userClient(req.body.token).query(
+        q.Logout(true)
+    ).catch(err => res.json(err))
+    res.json(data)
+})
 
 // GET USER PROFILE
 app.post("/user/:id", async (req,res) => {
