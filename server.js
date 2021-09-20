@@ -60,8 +60,8 @@ app.post("/signup", async (req,res) => {
             img_profile: "https://i.imgur.com/JYTRwWf.png",
             img_banner: "https://images.unsplash.com/photo-1578377375762-cbcc98d68af0?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80",
             groups: {},
-            profile_gm: [],
-            profile_pc: []
+            profile_gm: [{system: "", lfg: true}],
+            profile_pc: [{system: "", lfg: true}]
         }
     })
     ).catch (err => res.json(err))
@@ -120,13 +120,19 @@ app.post("/user/:id", async (req,res) => {
 // UPDATE USER PROFILE
 app.put("/user", async (req,res) => {
 
+    console.log('UPDATES: ', req.body)
+    console.log('UPDATES-DATA: ', req.body.data)
+    console.log('UPDATES-DATA-MOD: ', {data: req.body.data})
+
     const response = await userClient(req.body.userAuth.token).query(
         q.Update(
             q.Ref(q.Collection('Users'), req.body.userAuth.userRef),
-            { data: req.body.data }
+            {data: req.body.data}
         )
     ).catch(err => res.json(err))
-    res.json(response)
+    res.json(response.data)
+
+    console.log('UPDATES-RES: ', response.data)
 })
 
 // CREATE A GROUP
