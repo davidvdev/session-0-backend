@@ -132,21 +132,20 @@ app.put("/user", async (req,res) => {
 // CREATE A GROUP
 app.post("/group", async (req,res) => {
 
-    const group = req.body.data
+    const group = req.body.data.formData
 
     const response = await userClient(req.body.userAuth.token).query(
         q.Create(q.Collection('Groups'), 
             { data: {
-                groupName: group.groupName,
-                gameInfo: group.gameInfo,
-                groupInfo: group.groupInfo,
-                players: group.players,
-                gm: group.gm,
+                groupName: group.groupName || "",
+                gameInfo: group.gameInfo || "",
+                groupInfo: group.groupInfo || "",
                 bannerImg: group.bannerImg || "https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2734&q=80"
                 }
             }
         )
     ).catch(err => res.json(err))
+    console.log("Create Group: ", response)
     res.json( response )
 })
 
@@ -158,19 +157,6 @@ app.post("/group/:id", async (req,res) => {
         )
     ).catch(err => res.json(err))
 
-    // const members = await userClient(req.body.token).query(
-    //     q.Map(
-    //         q.Paginate(
-    //             q.Match(
-    //                 q.Index("member_by_group"),
-    //                 q.Ref(q.Collection("Groups"), req.params.id )
-    //                 )),
-    //                 q.Lambda("member",
-    //                     q.Get(q.Var("member"))
-    //                 )
-    //             )
-        
-    // ).catch(err => res.json(err))
     let members = await userClient(req.body.token).query(
         q.Map(
             q.Paginate(
@@ -196,16 +182,6 @@ app.post("/group/:id", async (req,res) => {
                 )
             )
     ).catch(err => res.json(err))
-
-    // const membersAndRoles = await roles.data.map(role => {
-    //     members.data.map(member => {
-    //         if (member.ref === role[0]){
-    //             return member
-    //         } else {
-    //             return member
-    //         }
-    //     });
-    // })
 
     const membersAndRoles = () => {
         const mergedArr = []
