@@ -87,18 +87,6 @@ app.post("/signup", async (req,res) => {
     }
 // likewise, frontend must send the token with every request
 
-// // USER CLIENT TEST ROUTE
-// app.get("/home", async (req,res) => {
-
-//     const data = await userClient(req.body.token).query(
-//         q.Map(
-//             q.Paginate(q.Match(q.Index('users_by_email'))),
-//             q.Lambda(x => q.Get(x))
-//         )
-//     ).catch(err => res.json(err))
-//     res.json({ data, 'result':'Test Successful'})
-// })
-
 // LOGOUT ROUTE
 app.post("/logout", async (req,res) => {
     const data = await userClient(req.body.token).query(
