@@ -42,6 +42,7 @@ app.post("/login", async (req,res) => {
     res.json( {"token": data.secret, "userRef": data.instance.id} )
 })
 
+
 // CREATE NEW USER
 app.post("/signup", async (req,res) => {
 
@@ -59,8 +60,8 @@ app.post("/signup", async (req,res) => {
             img_profile: "https://i.imgur.com/JYTRwWf.png",
             img_banner: "https://images.unsplash.com/photo-1578377375762-cbcc98d68af0?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80",
             groups: {},
-            profile_gm: [],
-            profile_pc: []
+            profile_gm: [{system: "", lfg: true}],
+            profile_pc: [{system: "", lfg: true}]
         }
     })
     ).catch (err => res.json(err))
@@ -98,6 +99,14 @@ app.post("/signup", async (req,res) => {
 //     res.json({ data, 'result':'Test Successful'})
 // })
 
+// LOGOUT ROUTE
+app.post("/logout", async (req,res) => {
+    const data = await userClient(req.body.token).query(
+        q.Logout(true)
+    ).catch(err => res.json(err))
+    res.json(data)
+})
+
 // GET USER PROFILE
 app.post("/user/:id", async (req,res) => {
     const response = await userClient(req.body.token).query(
@@ -114,10 +123,10 @@ app.put("/user", async (req,res) => {
     const response = await userClient(req.body.userAuth.token).query(
         q.Update(
             q.Ref(q.Collection('Users'), req.body.userAuth.userRef),
-            { data: req.body.data }
+            {data: req.body.data}
         )
     ).catch(err => res.json(err))
-    res.json(response)
+    res.json(response.data)
 })
 
 // CREATE A GROUP
@@ -149,7 +158,20 @@ app.post("/group/:id", async (req,res) => {
         )
     ).catch(err => res.json(err))
 
-    const members = await userClient(req.body.token).query(
+    // const members = await userClient(req.body.token).query(
+    //     q.Map(
+    //         q.Paginate(
+    //             q.Match(
+    //                 q.Index("member_by_group"),
+    //                 q.Ref(q.Collection("Groups"), req.params.id )
+    //                 )),
+    //                 q.Lambda("member",
+    //                     q.Get(q.Var("member"))
+    //                 )
+    //             )
+        
+    // ).catch(err => res.json(err))
+    let members = await userClient(req.body.token).query(
         q.Map(
             q.Paginate(
                 q.Match(
@@ -160,9 +182,63 @@ app.post("/group/:id", async (req,res) => {
                         q.Get(q.Var("member"))
                     )
                 )
-        
     ).catch(err => res.json(err))
-    res.json( {group: group, members: members} )
+
+    const roles = await userClient(req.body.token).query(
+        q.Map(
+            q.Paginate(
+                q.Match(
+                    q.Index("member+role_by_group"), 
+                    q.Ref(q.Collection("Groups"), req.params.id )
+                    )),
+                    q.Lambda("role",
+                        q.Var("role")
+                )
+            )
+    ).catch(err => res.json(err))
+
+    // const membersAndRoles = await roles.data.map(role => {
+    //     members.data.map(member => {
+    //         if (member.ref === role[0]){
+    //             return member
+    //         } else {
+    //             return member
+    //         }
+    //     });
+    // })
+
+    const membersAndRoles = () => {
+        const mergedArr = []
+        for (let i = 0; i < roles.data.length; i++) {
+        const role = roles.data[i];
+        const roleID = role[0].toString().split('"')[3]
+        console.log('ROLEID:  ', roleID)
+        console.log('ROLE: ',role)
+            for (let j = 0; j < roles.data.length; j++) {
+                const member = members.data[j]
+                console.log('MEMBER: ', member)
+                if(member.ref.toString().includes(roleID)){
+                    const namedUser = {
+                        ref: member.ref,
+                        data: member.data,
+                        role: role[1]
+                    }
+                    console.log('NAMED: ', namedUser)
+                    mergedArr.push(namedUser)
+                }
+            }
+        }
+        return mergedArr
+    }
+
+    const membersNroles = await membersAndRoles()
+
+    console.log('GROUP: ', group)
+    console.log('MEMBERS: ', members)
+    console.log('ROLES: ', roles.data)
+    console.log('MEMBERS+ROLES: ', membersNroles)
+
+    res.json( {group: group, members: membersNroles} )
 })
 
 // GET ALL GROUPS FOR SEARCH
@@ -189,14 +265,15 @@ app.put("/group/:id", async (req,res) => {
     res.json(response.data)
 })
 
-// JOIN A GROUP AS A PLAYER
+// JOIN A GROUP
 app.post("/joingroup", async (req,res) => {
     const response = await userClient(req.body.userAuth.token).query(
         q.Create(
             q.Collection("Relationships"), {
                 data: {
                     member: q.Ref(q.Collection("Users"), req.body.userAuth.userRef),
-                    group: q.Ref(q.Collection("Groups"), req.body.id)
+                    group: q.Ref(q.Collection("Groups"), req.body.id),
+                    role: req.body.role
                 }
             }
         )
